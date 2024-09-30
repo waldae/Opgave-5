@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\valja\\Desktop\\3semprogrammering\\Opgave 5\\Opgave 5\\Opgave 5\\Opgave 5.csproj",
+      "projectUniqueName": "C:\\Users\\valja\\Source\\Repos\\Opgave-5\\Opgave 5\\Opgave 5.csproj",
       "projectName": "Opgave 5",
-      "projectPath": "C:\\Users\\valja\\Desktop\\3semprogrammering\\Opgave 5\\Opgave 5\\Opgave 5\\Opgave 5.csproj",
+      "projectPath": "C:\\Users\\valja\\Source\\Repos\\Opgave-5\\Opgave 5\\Opgave 5.csproj",
       "packagesPath": "C:\\Users\\valja\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\valja\\Desktop\\3semprogrammering\\Opgave 5\\Opgave 5\\Opgave 5\\obj\\",
+      "outputPath": "C:\\Users\\valja\\Source\\Repos\\Opgave-5\\Opgave 5\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\valja\\AppData\\Roaming\\NuGet\\NuGet.Config",

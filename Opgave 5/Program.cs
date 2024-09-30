@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -32,7 +30,7 @@ public class Program
         var request = JsonSerializer.Deserialize<Request>(requestJson);
         var response = new Response();
 
-        if (request != null)
+        if (request != null && request.IsValid())
         {
             switch (request.Method.ToLower())
             {
@@ -72,6 +70,11 @@ public class Request
     public string Method { get; set; }
     public int Tal1 { get; set; }
     public int Tal2 { get; set; }
+
+    public bool IsValid()
+    {
+        return !string.IsNullOrEmpty(Method) && Tal1 >= 0 && Tal2 >= 0;
+    }
 }
 
 public class Response
