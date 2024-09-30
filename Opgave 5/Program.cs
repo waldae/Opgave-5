@@ -1,84 +1,101 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-public class Program
+class Program
 {
-    public static async Task Main(string[] args)
+    static async Task Main(string[] args)
     {
-        TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 5001);
-        server.Start();
+        Console.WriteLine("JSON TCP Server:");
+
+        TcpListener listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 5001); // Ny port
+        listener.Start();
         Console.WriteLine("Server started...");
 
         while (true)
         {
-            TcpClient socket = await server.AcceptTcpClientAsync();
+            TcpClient socket = await listener.AcceptTcpClientAsync();
+            IPEndPoint? clientEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
+            if (clientEndPoint != null)
+            {
+                Console.WriteLine("Client connected: " + clientEndPoint.Address);
+            }
+
             Task.Run(() => HandleClient(socket));
         }
     }
 
-    private static async Task HandleClient(TcpClient socket)
+    static async Task HandleClient(TcpClient socket)
     {
         NetworkStream ns = socket.GetStream();
-        byte[] buffer = new byte[1024];
-        int bytesRead = await ns.ReadAsync(buffer, 0, buffer.Length);
-        string requestJson = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+        StreamReader reader = new StreamReader(ns);
+        StreamWriter writer = new StreamWriter(ns);
 
-        var request = JsonSerializer.Deserialize<Request>(requestJson);
-        var response = new Response();
+        writer.AutoFlush = true;
 
-        if (request != null && request.IsValid())
+        while (socket.Connected)
         {
+            string? message = await reader.ReadLineAsync();
+            if (message != null)
+            {
+                Console.WriteLine("Received: " + message);
+                string response = HandleMessage(message);
+                await writer.WriteLineAsync(response);
+            }
+        }
+    }
+
+    static string HandleMessage(string message)
+    {
+        try
+        {
+            var request = JsonSerializer.Deserialize<Request>(message);
+            if (request == null || string.IsNullOrWhiteSpace(request.Method))
+            {
+                return JsonSerializer.Serialize(new Response { Status = "error", Message = "Invalid request format" });
+            }
+
             switch (request.Method.ToLower())
             {
                 case "random":
                     Random random = new Random();
-                    response.Result = new int[]
-                    {
-                        random.Next(request.Tal1, request.Tal2 + 1),
-                        random.Next(request.Tal1, request.Tal2 + 1)
-                    };
-                    break;
+                    int randomNumber1 = random.Next(request.Number1, request.Number2 + 1);
+                    int randomNumber2 = random.Next(request.Number1, request.Number2 + 1);
+                    return JsonSerializer.Serialize(new Response { Status = "success", Result = new[] { randomNumber1, randomNumber2 } });
+
                 case "add":
-                    response.Result = request.Tal1 + request.Tal2;
-                    break;
+                    int sum = request.Number1 + request.Number2;
+                    return JsonSerializer.Serialize(new Response { Status = "success", Result = sum });
+
                 case "subtract":
-                    response.Result = request.Tal1 - request.Tal2;
-                    break;
+                    int difference = request.Number1 - request.Number2;
+                    return JsonSerializer.Serialize(new Response { Status = "success", Result = difference });
+
                 default:
-                    response.Error = "Unknown method";
-                    break;
+                    return JsonSerializer.Serialize(new Response { Status = "error", Message = "Invalid method specified" });
             }
         }
-        else
+        catch (Exception ex)
         {
-            response.Error = "Invalid request format";
+            return JsonSerializer.Serialize(new Response { Status = "error", Message = ex.Message });
         }
-
-        string responseJson = JsonSerializer.Serialize(response);
-        byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
-        await ns.WriteAsync(responseBytes, 0, responseBytes.Length);
-        socket.Close();
     }
-}
 
-public class Request
-{
-    public string Method { get; set; }
-    public int Tal1 { get; set; }
-    public int Tal2 { get; set; }
-
-    public bool IsValid()
+    class Request
     {
-        return !string.IsNullOrEmpty(Method) && Tal1 >= 0 && Tal2 >= 0;
+        public string? Method { get; set; }
+        public int Number1 { get; set; }
+        public int Number2 { get; set; }
+    }
+
+    class Response
+    {
+        public string Status { get; set; }
+        public object? Result { get; set; }
+        public string? Message { get; set; }
     }
 }
 
-public class Response
-{
-    public object Result { get; set; }
-    public string Error { get; set; }
-}
